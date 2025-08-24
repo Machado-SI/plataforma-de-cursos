@@ -1,6 +1,11 @@
 {
+  "name": "projeto_curso",
+  "version": "1.0.0",
+  "description": "Sistema de curso feito em NodeJS com Express e PostgreSQL",
+  "type": "commonjs",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "pg-promise": "^11.15.0",
