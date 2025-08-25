@@ -5,6 +5,9 @@ const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs') 
 const yup = require('yup')
 
+// Middleware para proteger rotas
+const protect = require('./middleware')
+
 // Importa o arquivo db.js onde ocorre a conexão com o banco de dados
 const db = require('./db')
 
@@ -33,6 +36,7 @@ app.post('/register', async (req,res) => {
         if(!novoUsuario) {
             return res.status(500).json({message: 'Erro ao registrar usuário'})
         }
+        console.log('Novo usuário registrado:', novoUsuario)
         res.status(201).json(novoUsuario)
     } catch (error) {
         if(error.name === 'ValidationError') {
@@ -66,6 +70,7 @@ app.post('/login', async (req, res) => {
 
         // Gerar o token JWT
         const token = jwt.sign({id: user.id, nome: user.name, type: user.type}, JWT_SECRET, {expiresIn: '1h'})
+        console.log('Usuário logado:', token)
         return res.status(200).json({ token })
     } catch (error) {
         if(error.name === 'ValidationError') {
@@ -80,13 +85,16 @@ app.post('/login', async (req, res) => {
 })
 
 
-// Rota para buscar todos os cursos
-app.get('/cursos', async (req, res) => {
+// Rota protegida para buscar todos os cursos
+app.get('/cursos', protect, async (req, res) => {
     try {
+        console.log('Usuário autenticado:', req.user)
+        
         const cursos = await db.any('SELECT * FROM cursos')
         if(cursos.length === 0) {
             return res.status(404).json({message: 'Nenhum curso encontrado'})
         }
+        console.log(cursos)
         res.status(200).json(cursos)
     } catch (error) {
         console.error('Erro ao buscar cursos:', error)
