@@ -16,17 +16,27 @@ dotenv.config()
 
 // Validação de campos para registro com Yup
 const JWT_SECRET = process.env.JWT_SECRET
-const validateSchema = yup.object().shape({
+const registerSchema = yup.object().shape({
     nome: yup.string().required(),
     senha: yup.string().required().min(6),
     type: yup.string().oneOf(['admin', 'user']).required()
 })
 
+// Validação de campos para login com Yup
+const loginSchema = yup.object().shape({
+    nome: yup.string().required(),
+    senha: yup.string().required().min(6)
+})
+
+// Validação de campos para inscrição com Yup
+const inscricoesSchema = yup.object().shape({
+    curso_id: yup.number().required().integer().positive()
+})
 
 // Rota para registrar um novo usuário
 app.post('/register', async (req,res) => {
     try {
-        const {nome, senha, type} = await validateSchema.validate(req.body, {
+        const {nome, senha, type} = await registerSchema.validate(req.body, {
             abortEarly: false
         }) 
         const hashedPassword = await bcrypt.hash(senha, 10)
@@ -52,7 +62,7 @@ app.post('/register', async (req,res) => {
 // Rota para login
 app.post('/login', async (req, res) => {
     try {
-        const {nome, senha} = await validateSchema.validate(req.body, {
+        const {nome, senha} = await loginSchema.validate(req.body, {
             abortEarly: false
         })
         
@@ -99,6 +109,50 @@ app.get('/cursos', protect, async (req, res) => {
     } catch (error) {
         console.error('Erro ao buscar cursos:', error)
         res.status(500).json({message: 'Erro ao buscar cursos'})
+    }
+})
+
+// Rota protegida para criar uma nova inscrição
+app.post('/inscricoes', protect, async (req,res) => {
+    try {
+        const {curso_id} = req.body
+        const usuario_id = req.user.id
+
+        await inscricoesSchema.validate(req.body, {
+            abortEarly: false
+        })
+
+        const cursoExiste = await db.oneOrNone('SELECT * FROM cursos WHERE id = $1', [curso_id])
+        if(!cursoExiste) {
+            return res.status(404).json({message: 'Curso não encontrado'})
+        }
+
+        const inscricaoExiste = await db.oneOrNone(
+            'SELECT * FROM inscricoes WHERE usuario_id = $1 AND curso_id = $2', [usuario_id, curso_id]
+        )
+        if(inscricaoExiste) {
+            return res.status(400).json({message: 'Usuário já inscrito nesse curso'})
+        }
+
+        const novaInscricao = await db.one(
+            'INSERT INTO inscricoes (usuario_id, curso_id) VALUES ($1, $2) RETURNING id, usuario_id, curso_id, data_inscricao',
+            [usuario_id, curso_id]
+        )
+        if(!novaInscricao) {
+            return res.status(500).json({message: 'Erro ao criar inscrição'})
+        }
+
+        console.log('Nova inscrição criada:', novaInscricao)
+        res.status(201).json(novaInscricao)
+    } catch (error) {
+        if(error.name === 'ValidationError') {
+            return res.status(400).json({
+                message: 'Erro de validação',
+                errors: error.errors
+            })
+        }
+        console.error('Erro ao criar inscrição:', error)
+        res.status(500).json({message: 'Erro ao criar inscrição'})
     }
 })
 
