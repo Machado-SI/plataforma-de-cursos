@@ -156,6 +156,19 @@ app.post('/inscricoes', protect, async (req,res) => {
     }
 })
 
+// Rota protegida para buscar o perfil do usuário autenticado
+app.get('/profile', protect, async (req, res) => {
+    try {
+        const usuario = req.user
+
+        console.log('Dados do usuário:', { usuario })
+        res.status(200).json({usuario})
+    } catch (error) {
+        console.log('Erro ao buscar perfil do usuário:', error)
+        res.status(500).json({message: 'Erro ao buscar perfil do usuário'})
+    }
+})
+
 if(process.env.NODE_ENV !== 'test') {
     app.listen(3000, () => console.log('Server running on port 3000'));
 }
