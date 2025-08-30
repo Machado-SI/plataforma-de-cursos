@@ -9,7 +9,7 @@ const yup = require('yup')
 const protect = require('./middleware')
 
 // Importa o arquivo db.js onde ocorre a conexão com o banco de dados
-const db = require('./db')
+const db = require('./db');
 
 app.use(express.json())
 dotenv.config()
@@ -78,8 +78,11 @@ app.post('/login', async (req, res) => {
             return res.status(400).json({message: 'Senha incorreta'})
         }
 
+        // Configurações do token
+        const options = {expiresIn: process.env.NODE_ENV === 'test' ? '1h' : '30d'}
+
         // Gerar o token JWT
-        const token = jwt.sign({id: user.id, nome: user.name, type: user.type}, JWT_SECRET, {expiresIn: '1h'})
+        const token = jwt.sign({id: user.id, nome: user.name, type: user.type}, JWT_SECRET, options)
         console.log('Usuário logado:', token)
         return res.status(200).json({ token })
     } catch (error) {
@@ -109,6 +112,31 @@ app.get('/cursos', protect, async (req, res) => {
     } catch (error) {
         console.error('Erro ao buscar cursos:', error)
         res.status(500).json({message: 'Erro ao buscar cursos'})
+    }
+})
+
+// Rota protegida para criar um novo curso (apenas para admins)
+app.post('/cursos', protect, async (req, res) => {
+    try {
+        const usuario = req.user
+
+        // Verifica se o usuário é admin
+        if(usuario.type !== 'admin') {
+            console.log('Acesso negado. Usuário não é admin:', usuario)
+            return res.status(403).json({message: 'Acesso negado. Apenas administradores podem criar cursos.'})
+        }
+        const {titulo, descricao, criador, conclusao} = req.body
+        const novoCurso = await db.one(
+            'INSERT INTO cursos (name, description, creator, averagetimeinhours) VALUES ($1, $2, $3, $4) RETURNING id, name, description, creator', [titulo, descricao, criador, conclusao]
+        )
+        if(!novoCurso) {
+            return res.status(500).json({message: 'Erro ao criar curso'})
+        }
+        console.log('Novo curso criado:', novoCurso)
+        res.status(201).json(novoCurso)
+    } catch (error) {
+        console.error('Erro ao criar curso:', error)
+        res.status(500).json({message: 'Erro ao criar curso'})
     }
 })
 
@@ -169,6 +197,8 @@ app.get('/profile', protect, async (req, res) => {
     }
 })
 
+// Inicia o servidor na porta 3000
+// Adiciona uma verificação para não iniciar o servidor durante os testes
 if(process.env.NODE_ENV !== 'test') {
     app.listen(3000, () => console.log('Server running on port 3000'));
 }
