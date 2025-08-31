@@ -18,8 +18,7 @@ dotenv.config()
 const JWT_SECRET = process.env.JWT_SECRET
 const registerSchema = yup.object().shape({
     nome: yup.string().required(),
-    senha: yup.string().required().min(6),
-    type: yup.string().oneOf(['admin', 'user']).required()
+    senha: yup.string().required().min(6)
 })
 
 // Validação de campos para login com Yup
@@ -36,18 +35,39 @@ const inscricoesSchema = yup.object().shape({
 // Rota para registrar um novo usuário
 app.post('/register', async (req,res) => {
     try {
-        const {nome, senha, type} = await registerSchema.validate(req.body, {
+        const {nome, senha} = await registerSchema.validate(req.body, {
             abortEarly: false
         }) 
+
+        // Faz o hash da senha antes de salvar no banco
         const hashedPassword = await bcrypt.hash(senha, 10)
-        const novoUsuario = await db.oneOrNone(
-            'INSERT INTO usuarios (name, senha, type) VALUES ($1, $2, $3) RETURNING id, name', [nome, hashedPassword, type]
-        )
-        if(!novoUsuario) {
-            return res.status(500).json({message: 'Erro ao registrar usuário'})
+
+        // Verifica se existe usuários no banco de dados
+        const totalUsuarios = await db.one('SELECT COUNT(*) as count FROM usuarios')
+
+        // Verefica se é o primeiro usuário
+        if(totalUsuarios.count == 0) {
+            const type = 'admin'
+
+            // Se não houver usuários, o primeiro será admin
+            const primeiroUsuario = await db.one('INSERT INTO usuarios (name, senha, type) VALUES ($1, $2, $3) RETURNING id, name, type', [nome, hashedPassword, type])
+            
+            if(!primeiroUsuario) {
+                return res.status(500).json({message: 'Erro ao registrar o primeiro usuário'})
+            }
+            console.log('Novo usuário registrado:', primeiroUsuario)
+            res.status(201).json(primeiroUsuario)
+        } else {
+            // Se já houver usuários, os próximos serão do tipo 'user'
+            const novoUsuario = await db.oneOrNone(
+                'INSERT INTO usuarios (name, senha, type) VALUES ($1, $2, $3) RETURNING id, name', [nome, hashedPassword, 'user']
+            )
+            if(!novoUsuario) {
+                return res.status(500).json({message: 'Erro ao registrar usuário'})
+            }
+            console.log('Novo usuário registrado:', novoUsuario)
+            res.status(201).json(novoUsuario)
         }
-        console.log('Novo usuário registrado:', novoUsuario)
-        res.status(201).json(novoUsuario)
     } catch (error) {
         if(error.name === 'ValidationError') {
             return res.status(400).json({
