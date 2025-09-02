@@ -161,7 +161,7 @@ app.post('/cursos', protect, async (req, res) => {
 })
 
 // Rota protegida para criar uma nova inscrição
-app.post('/inscricoes', protect, async (req,res) => {
+app.post('/inscricao', protect, async (req,res) => {
     try {
         const {curso_id} = req.body
         const usuario_id = req.user.id
@@ -220,6 +220,13 @@ app.get('/profile', protect, async (req, res) => {
 // Rota protegida para deletar um curso (apenas para admins)
 app.delete('/cursos/:id', protect, async (req, res) => {
     try {
+        const usuario = req.user
+
+        // Verifica se o usuário é admin
+        if(usuario.type !== 'admin') {
+            console.log('Acesso negado. Usuário não é admin:', usuario)
+            return res.status(403).json({message: 'Acesso negado. Apenas administradores podem deletar cursos.'})
+        }
         const deletarCurso = await db.result('DELETE FROM cursos WHERE id = $1 RETURNING *', [req.params.id])
 
         // Verifica se o curso foi encontrado ou já foi deletado
@@ -237,11 +244,22 @@ app.delete('/cursos/:id', protect, async (req, res) => {
     }
 })
 
-app.delete('/inscricoes/:id', async (req, res) => {
+// Rota para deletar uma inscrição
+app.delete('/inscricao/:id', protect, async (req, res) => {
     try {
-        
+        const deletarInscricao = await db.result('DELETE FROM inscricoes WHERE id = $1 RETURNING *', [req.params.id])
+
+        // Verifica se a inscrição foi encontrada ou já foi deletada
+        if(deletarInscricao.rowCount === 0) {
+            return res.status(500).json({message: 'Inscrição não encontrada ou já deletada'})
+        }
+
+        // Exibe a inscrição deletada no console para verificação
+        console.log('Inscrição deletada:', deletarInscricao.rows[0])
+        res.status(200).json({message: 'Inscrição deletada com sucesso'})
     } catch (error) {
-        
+        console.log('Erro ao deletar inscrição:', error)
+        res.status(500).json({message: 'Erro ao deletar inscrição'})
     }
 })
 

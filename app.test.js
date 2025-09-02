@@ -42,7 +42,19 @@ describe('API Endpoints', () => {
     //     expect(response.statusCode).toBe(201);
     // })
 
+    // it('Deve responder com 200 no endpoint root', async () => {
+    //     const response = await request(app).delete('/cursos/7').set('Authorization', 'Bearer token_aqui')
+    // })
+
+    // it('Deve responder com 201 no endpoint root', async () => {
+    //     const response = await request(app).post('/inscricao').set('Authorization', 'Bearer token_aqui').send({
+    //         curso_id: 3
+    //     })
+    //     expect(response.statusCode).toBe(201);
+    // })
+
     it('Deve responder com 200 no endpoint root', async () => {
-        const response = await request(app).delete('/cursos/7').set('Authorization', 'Bearer token_aqui')
+        const response = await request(app).delete('/inscricao/1').set('Authorization', 'Bearer token_aqui')
+        expect(response.statusCode).toBe(200);
     })
 })
