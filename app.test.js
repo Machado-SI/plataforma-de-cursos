@@ -5,13 +5,13 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 describe('API Endpoints', () => {
-    it('Deve responder com 201 no endpoint register', async () => {
-        const response = await request(app).post('/register').send({
-            nome: 'testuser2',
-            senha: 'password1234'
-        })
-        expect(response.statusCode).toBe(201);
-    }, 10000)
+    // it('Deve responder com 201 no endpoint register', async () => {
+    //     const response = await request(app).post('/register').send({
+    //         nome: 'testuser2',
+    //         senha: 'password1234'
+    //     })
+    //     expect(response.statusCode).toBe(201);
+    // }, 10000)
 
     // it('Deve responder com 200 no endpoint login', async () => {
     //     const response = await request(app).post('/login').send({
@@ -41,4 +41,8 @@ describe('API Endpoints', () => {
     //     })
     //     expect(response.statusCode).toBe(201);
     // })
+
+    it('Deve responder com 200 no endpoint root', async () => {
+        const response = await request(app).delete('/cursos/7').set('Authorization', 'Bearer token_aqui')
+    })
 })

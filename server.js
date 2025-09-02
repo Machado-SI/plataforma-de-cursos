@@ -217,6 +217,34 @@ app.get('/profile', protect, async (req, res) => {
     }
 })
 
+// Rota protegida para deletar um curso (apenas para admins)
+app.delete('/cursos/:id', protect, async (req, res) => {
+    try {
+        const deletarCurso = await db.result('DELETE FROM cursos WHERE id = $1 RETURNING *', [req.params.id])
+
+        // Verifica se o curso foi encontrado ou já foi deletado
+        if(deletarCurso.rowCount === 0) {
+            return res.status(500).json({message: 'Curso não encontrado ou já deletado'})
+        }
+
+        // Exibe o curso deletado no console para verificação
+        // [0] porque o RETURNING retorna um array de objetos que contem os dados do curso deletado, e 0 porque é um array de objetos e queremos só a primeira parte onde contém os dados do curso
+        console.log('Curso deletado:', deletarCurso.rows[0])
+        res.status(200).json({message: 'Curso deletado com sucesso'})
+    } catch (error) {
+        console.error('Erro ao deletar curso:', error)
+        res.status(500).json({message: 'Erro ao deletar curso'})
+    }
+})
+
+app.delete('/inscricoes/:id', async (req, res) => {
+    try {
+        
+    } catch (error) {
+        
+    }
+})
+
 // Inicia o servidor na porta 3000
 // Adiciona uma verificação para não iniciar o servidor durante os testes
 if(process.env.NODE_ENV !== 'test') {
