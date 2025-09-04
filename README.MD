@@ -30,20 +30,25 @@ Para iniciar, abra o terminal e use o comando `git clone` seguido da URL do repo
 
 ```bash
 git clone https://github.com/Machado-SI/plataforma-de-cursos
+```
 
-#### 2. Entrar no Diretório
+### 2. Entrar no Diretório
 
 ```bash
 cd plataforma-de-cursos
+```
 
-#### 3. Instalando Depedências
+### 3. Instalando Depedências
 
 ```bash
 npm install
+```
 
-#### 4. Configurar Ambiente
+### 4. Configurar Ambiente
+```dotenv
 JWT_SECRET=sua_chave_secreta
 NODE_ENV=development
+```
 
 ---
 
